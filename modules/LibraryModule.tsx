@@ -260,9 +260,12 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     status: '' as '' | 'ATIVO' | 'DEVOLVIDO' | 'DELAYED',
     type: '' as '' | 'ALUNO' | 'SERVIDOR',
     class: '',
+    overdueRange: '' as '' | '1+' | '1-7' | '8-15' | '16-30' | '30+' | '60+',
     dateFrom: '',
     dateTo: ''
   });
+  const [circulationReportMode, setCirculationReportMode] = useState<'date' | 'by_class' | 'by_overdue'>('date');
+  const [pageBreakByClass, setPageBreakByClass] = useState(false);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -1347,14 +1350,52 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     );
   }, [classrooms, readers]);
 
+  const readersById = useMemo(() => {
+    const map = new Map<string, Reader>();
+    readers.forEach(r => map.set(r.id, r));
+    return map;
+  }, [readers]);
+
+  const getDaysOverdue = (loan: Loan, todayStr: string): number => {
+    if (loan.status !== 'ATIVO' || !loan.dueDate || loan.dueDate >= todayStr) return 0;
+    const parseUtc = (dateStr: string) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return NaN;
+      return Date.UTC(y, m - 1, d);
+    };
+    const todayMs = parseUtc(todayStr);
+    const dueMs = parseUtc(loan.dueDate);
+    if (isNaN(todayMs) || isNaN(dueMs)) return 0;
+    return Math.max(0, Math.floor((todayMs - dueMs) / 86400000));
+  };
+
+  const getReaderGroupLabel = (reader?: Reader): { label: string; isStaff: boolean } => {
+    if (!reader) return { label: 'SEM TURMA DEFINIDA', isStaff: false };
+    if ((reader.type || '').toUpperCase() === 'SERVIDOR') {
+      return { label: 'SERVIDORES', isStaff: true };
+    }
+    const cls = (reader.class || '').trim();
+    if (!cls || cls === '-') return { label: 'SEM TURMA DEFINIDA', isStaff: false };
+    return { label: normalizeClassName(cls), isStaff: false };
+  };
+
+  const OVERDUE_RANGE_LABELS: Record<string, string> = {
+    '1+': 'Todos em atraso (1+ dia)',
+    '1-7': '1 a 7 dias de atraso',
+    '8-15': '8 a 15 dias de atraso',
+    '16-30': '16 a 30 dias de atraso',
+    '30+': 'Mais de 30 dias de atraso',
+    '60+': 'Mais de 60 dias de atraso'
+  };
+
   const filteredLoansForReport = useMemo(() => {
     const selectedClassNorm = normalizeClassName(circulationFilter.class);
-    return loans.filter(l => {
-      // Find reader for type and class
-      const reader = readers.find(r => r.id === l.readerId);
-      
-      const matchStatus = !circulationFilter.status || 
-        (circulationFilter.status === 'DELAYED' ? (l.status === 'ATIVO' && l.dueDate < stats.todayStr) : l.status === circulationFilter.status);
+    const filtered = loans.filter(l => {
+      const reader = readersById.get(l.readerId);
+      const daysOverdue = getDaysOverdue(l, stats.todayStr);
+
+      const matchStatus = !circulationFilter.status ||
+        (circulationFilter.status === 'DELAYED' ? daysOverdue > 0 : l.status === circulationFilter.status);
       const matchType = !circulationFilter.type || reader?.type === circulationFilter.type;
       const readerClassNorm = normalizeClassName(reader?.class);
       const matchClass = !selectedClassNorm || (
@@ -1365,12 +1406,68 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           readerClassNorm.startsWith(`${selectedClassNorm}(`)
         )
       );
+      const matchOverdueRange = (() => {
+        switch (circulationFilter.overdueRange) {
+          case '1+': return daysOverdue >= 1;
+          case '1-7': return daysOverdue >= 1 && daysOverdue <= 7;
+          case '8-15': return daysOverdue >= 8 && daysOverdue <= 15;
+          case '16-30': return daysOverdue >= 16 && daysOverdue <= 30;
+          case '30+': return daysOverdue > 30;
+          case '60+': return daysOverdue > 60;
+          default: return true;
+        }
+      })();
       const matchFrom = !circulationFilter.dateFrom || l.loanDate >= circulationFilter.dateFrom;
       const matchTo = !circulationFilter.dateTo || l.loanDate <= circulationFilter.dateTo;
-      
-      return matchStatus && matchType && matchClass && matchFrom && matchTo;
+
+      return matchStatus && matchType && matchClass && matchOverdueRange && matchFrom && matchTo;
     });
-  }, [loans, readers, circulationFilter, stats.todayStr]);
+
+    if (circulationReportMode === 'by_overdue') {
+      return [...filtered].sort((a, b) => {
+        const diff = getDaysOverdue(b, stats.todayStr) - getDaysOverdue(a, stats.todayStr);
+        if (diff !== 0) return diff;
+        if (a.dueDate !== b.dueDate) return (a.dueDate || '').localeCompare(b.dueDate || '');
+        return (a.readerName || '').localeCompare(b.readerName || '', 'pt-BR');
+      });
+    }
+
+    if (circulationReportMode === 'by_class') {
+      return [...filtered].sort((a, b) => {
+        const gA = getReaderGroupLabel(readersById.get(a.readerId));
+        const gB = getReaderGroupLabel(readersById.get(b.readerId));
+        if (gA.isStaff !== gB.isStaff) return gA.isStaff ? 1 : -1;
+        if (gA.label === 'SEM TURMA DEFINIDA' && gB.label !== 'SEM TURMA DEFINIDA') return 1;
+        if (gB.label === 'SEM TURMA DEFINIDA' && gA.label !== 'SEM TURMA DEFINIDA') return -1;
+        const classCmp = gA.label.localeCompare(gB.label, 'pt-BR', { numeric: true });
+        if (classCmp !== 0) return classCmp;
+        const overdueDiff = getDaysOverdue(b, stats.todayStr) - getDaysOverdue(a, stats.todayStr);
+        if (overdueDiff !== 0) return overdueDiff;
+        return (a.readerName || '').localeCompare(b.readerName || '', 'pt-BR');
+      });
+    }
+
+    return filtered;
+  }, [loans, readersById, circulationFilter, circulationReportMode, stats.todayStr]);
+
+  const groupedLoansByClass = useMemo(() => {
+    const groups = new Map<string, { groupName: string; isStaff: boolean; items: Loan[]; delayedCount: number }>();
+    filteredLoansForReport.forEach(loan => {
+      const reader = readersById.get(loan.readerId);
+      const { label, isStaff } = getReaderGroupLabel(reader);
+      const existing = groups.get(label) || { groupName: label, isStaff, items: [], delayedCount: 0 };
+      existing.items.push(loan);
+      if (getDaysOverdue(loan, stats.todayStr) > 0) existing.delayedCount += 1;
+      groups.set(label, existing);
+    });
+
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.isStaff !== b.isStaff) return a.isStaff ? 1 : -1;
+      if (a.groupName === 'SEM TURMA DEFINIDA' && b.groupName !== 'SEM TURMA DEFINIDA') return 1;
+      if (b.groupName === 'SEM TURMA DEFINIDA' && a.groupName !== 'SEM TURMA DEFINIDA') return -1;
+      return a.groupName.localeCompare(b.groupName, 'pt-BR', { numeric: true });
+    });
+  }, [filteredLoansForReport, readersById, stats.todayStr]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -1937,129 +2034,266 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
-                    <select 
-                      value={circulationFilter.status} 
-                      onChange={e => setCirculationFilter({ ...circulationFilter, status: e.target.value as any })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
-                      <option value="">TODOS STATUS</option>
-                      <option value="ATIVO">EMPRÉSTIMO ATIVO</option>
-                      <option value="DEVOLVIDO">JÁ DEVOLVIDOS</option>
-                      <option value="DELAYED">SOMENTE ATRASOS</option>
-                    </select>
+                <div className="space-y-5">
+                  {/* MODO DE ORGANIZAÇÃO / IMPRESSÃO */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/60 border border-indigo-100 p-3 rounded-2xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest px-2">
+                        Formato do Relatório:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCirculationReportMode('date')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                          circulationReportMode === 'date'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-gray-500 border border-gray-100 hover:text-indigo-600'
+                        }`}
+                      >
+                        <Calendar size={12} /> Lista Geral (Data)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCirculationReportMode('by_class')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                          circulationReportMode === 'by_class'
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-white text-gray-500 border border-gray-100 hover:text-indigo-600'
+                        }`}
+                      >
+                        <GraduationCap size={13} /> Agrupado por Turma
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCirculationReportMode('by_overdue');
+                          if (!circulationFilter.status) {
+                            setCirculationFilter(prev => ({ ...prev, status: 'DELAYED' }));
+                          }
+                        }}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                          circulationReportMode === 'by_overdue'
+                            ? 'bg-red-600 text-white shadow-md'
+                            : 'bg-white text-red-600 border border-red-100 hover:bg-red-50'
+                        }`}
+                      >
+                        <AlertTriangle size={12} /> Por Dias de Atraso
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      {circulationReportMode === 'by_class' && (
+                        <label className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-indigo-100 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={pageBreakByClass}
+                            onChange={e => setPageBreakByClass(e.target.checked)}
+                            className="rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wide">
+                            1 turma por folha na impressão
+                          </span>
+                        </label>
+                      )}
+                      {(circulationFilter.status || circulationFilter.type || circulationFilter.class || circulationFilter.overdueRange || circulationFilter.dateFrom || circulationFilter.dateTo) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCirculationFilter({ status: '', type: '', class: '', overdueRange: '', dateFrom: '', dateTo: '' });
+                            setCirculationReportMode('date');
+                          }}
+                          className="px-3 py-1.5 text-[9px] font-black uppercase text-red-600 bg-white hover:bg-red-50 border border-red-100 rounded-xl flex items-center gap-1 transition-all"
+                        >
+                          <X size={12} /> Limpar Filtros
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Leitor</label>
-                    <select 
-                      value={circulationFilter.type} 
-                      onChange={e => setCirculationFilter({ ...circulationFilter, type: e.target.value as any })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
-                      <option value="">TODOS PERFIS</option>
-                      <option value="ALUNO">ALUNOS</option>
-                      <option value="SERVIDOR">SERVIDORES</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Filtrar Turma</label>
-                    <select 
-                      value={circulationFilter.class}
-                      onChange={e => setCirculationFilter({ ...circulationFilter, class: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
-                      <option value="">TODAS AS TURMAS</option>
-                      {availableReportClasses.map(cls => (
-                        <option key={cls} value={cls}>{cls}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
-                    <input 
-                      type="date" 
-                      value={circulationFilter.dateFrom}
-                      onChange={e => setCirculationFilter({ ...circulationFilter, dateFrom: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Até</label>
-                    <input 
-                      type="date" 
-                      value={circulationFilter.dateTo}
-                      onChange={e => setCirculationFilter({ ...circulationFilter, dateTo: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+
+                  {/* FILTROS DETALHADOS */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
+                      <select
+                        value={circulationFilter.status}
+                        onChange={e => setCirculationFilter({ ...circulationFilter, status: e.target.value as any })}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                        <option value="">TODOS STATUS</option>
+                        <option value="ATIVO">EMPRÉSTIMO ATIVO</option>
+                        <option value="DEVOLVIDO">JÁ DEVOLVIDOS</option>
+                        <option value="DELAYED">SOMENTE ATRASOS</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Dias de Atraso</label>
+                      <select
+                        value={circulationFilter.overdueRange}
+                        onChange={e => {
+                          const val = e.target.value as '' | '1+' | '1-7' | '8-15' | '16-30' | '30+' | '60+';
+                          setCirculationFilter(prev => ({
+                            ...prev,
+                            overdueRange: val,
+                            status: val ? 'DELAYED' : prev.status
+                          }));
+                        }}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                        <option value="">QUALQUER PRAZO</option>
+                        <option value="1+">TODOS EM ATRASO (1+ DIA)</option>
+                        <option value="1-7">1 A 7 DIAS DE ATRASO</option>
+                        <option value="8-15">8 A 15 DIAS DE ATRASO</option>
+                        <option value="16-30">16 A 30 DIAS DE ATRASO</option>
+                        <option value="30+">MAIS DE 30 DIAS</option>
+                        <option value="60+">MAIS DE 60 DIAS</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Tipo de Leitor</label>
+                      <select
+                        value={circulationFilter.type}
+                        onChange={e => setCirculationFilter({ ...circulationFilter, type: e.target.value as any })}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                        <option value="">TODOS PERFIS</option>
+                        <option value="ALUNO">ALUNOS</option>
+                        <option value="SERVIDOR">SERVIDORES</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Filtrar Turma</label>
+                      <select
+                        value={circulationFilter.class}
+                        onChange={e => setCirculationFilter({ ...circulationFilter, class: e.target.value })}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                        <option value="">TODAS AS TURMAS</option>
+                        {availableReportClasses.map(cls => (
+                          <option key={cls} value={cls}>{cls}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
+                      <input
+                        type="date"
+                        value={circulationFilter.dateFrom}
+                        onChange={e => setCirculationFilter({ ...circulationFilter, dateFrom: e.target.value })}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Até</label>
+                      <input
+                        type="date"
+                        value={circulationFilter.dateTo}
+                        onChange={e => setCirculationFilter({ ...circulationFilter, dateTo: e.target.value })}
+                        className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
             {/* ÁREA DO RELATÓRIO P/ IMPRESSÃO */}
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden print:shadow-none print:border-none">
-              <div className="p-10 border-b border-gray-50 bg-gray-50/50 flex flex-col items-center justify-center text-center space-y-4 print:pb-10">
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden print:shadow-none print:border-none print:rounded-none print:overflow-visible">
+              <style>{`
+                @media print {
+                  @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                  }
+                }
+              `}</style>
+              <div className="p-10 print:p-4 border-b border-gray-50 print:border-gray-300 bg-gray-50/50 print:bg-white flex flex-col items-center justify-center text-center space-y-4 print:space-y-2">
                 <div className="flex flex-col items-center">
                   <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 mb-4 no-print">
                     {reportType === 'inventory' ? <BookOpen className="text-indigo-600" size={40} /> : <Clock className="text-indigo-600" size={40} />}
                   </div>
-                  <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">
-                    {reportType === 'inventory' ? 'Relatório Geral do Acervo (Inventário)' : 'Relatório de Circulação e Comodatos'}
+                  <h3 className="text-2xl print:text-lg font-black text-gray-900 uppercase tracking-tighter">
+                    {reportType === 'inventory'
+                      ? 'Relatório Geral do Acervo (Inventário)'
+                      : circulationReportMode === 'by_class'
+                        ? 'Relatório de Empréstimos por Turma'
+                        : circulationReportMode === 'by_overdue'
+                          ? 'Relatório de Empréstimos por Dias de Atraso'
+                          : 'Relatório de Circulação e Comodatos'}
                   </h3>
-                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
-                    Biblioteca André Maggi - {new Date().toLocaleDateString('pt-BR')}
+                  <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.15em] mt-1">
+                    Biblioteca André Maggi • Emitido em {new Date().toLocaleDateString('pt-BR')}
                     {reportType === 'circulation' && circulationFilter.class ? ` • Turma: ${circulationFilter.class}` : ''}
+                    {reportType === 'circulation' && circulationFilter.status === 'DELAYED' ? ' • Somente Atrasos' : ''}
+                    {reportType === 'circulation' && circulationFilter.status === 'ATIVO' ? ' • Somente Ativos' : ''}
+                    {reportType === 'circulation' && circulationFilter.status === 'DEVOLVIDO' ? ' • Somente Devolvidos' : ''}
+                    {reportType === 'circulation' && circulationFilter.overdueRange ? ` • ${OVERDUE_RANGE_LABELS[circulationFilter.overdueRange]}` : ''}
                   </p>
                 </div>
                 
-                <div className="flex gap-4 no-print">
-                  <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
+                <div className="flex flex-wrap justify-center gap-4 print:gap-3">
+                  <div className="px-6 py-3 print:px-4 print:py-1.5 bg-white border border-gray-100 print:border-gray-300 rounded-2xl print:rounded-lg">
                     <p className="text-[8px] font-black text-gray-400 uppercase">Total de Itens Listados</p>
-                    <p className="text-xl font-black text-indigo-600">{reportType === 'inventory' ? groupedBooksForReport.length : filteredLoansForReport.length}</p>
+                    <p className="text-xl print:text-sm font-black text-indigo-600">{reportType === 'inventory' ? groupedBooksForReport.length : filteredLoansForReport.length}</p>
                   </div>
                   {reportType === 'inventory' && (
-                    <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
+                    <div className="px-6 py-3 print:px-4 print:py-1.5 bg-white border border-gray-100 print:border-gray-300 rounded-2xl print:rounded-lg">
                       <p className="text-[8px] font-black text-gray-400 uppercase">Total de Exemplares</p>
-                      <p className="text-xl font-black text-emerald-600">
+                      <p className="text-xl print:text-sm font-black text-emerald-600">
                         {filteredBooksForReport.reduce((acc, b) => acc + b.totalCopies, 0)}
                       </p>
                     </div>
                   )}
                   {reportType === 'circulation' && (
-                    <div className="px-6 py-3 bg-white border border-gray-100 rounded-2xl">
-                      <p className="text-[8px] font-black text-gray-400 uppercase">Em Atraso na Lista</p>
-                      <p className="text-xl font-black text-red-600">
-                        {filteredLoansForReport.filter(l => l.status === 'ATIVO' && l.dueDate < stats.todayStr).length}
-                      </p>
-                    </div>
+                    <>
+                      <div className="px-6 py-3 print:px-4 print:py-1.5 bg-white border border-gray-100 print:border-gray-300 rounded-2xl print:rounded-lg">
+                        <p className="text-[8px] font-black text-gray-400 uppercase">Em Atraso na Lista</p>
+                        <p className="text-xl print:text-sm font-black text-red-600">
+                          {filteredLoansForReport.filter(l => getDaysOverdue(l, stats.todayStr) > 0).length}
+                        </p>
+                      </div>
+                      {circulationReportMode === 'by_class' && (
+                        <div className="px-6 py-3 print:px-4 print:py-1.5 bg-white border border-gray-100 print:border-gray-300 rounded-2xl print:rounded-lg">
+                          <p className="text-[8px] font-black text-gray-400 uppercase">Turmas / Grupos</p>
+                          <p className="text-xl print:text-sm font-black text-gray-900">
+                            {groupedLoansByClass.length}
+                          </p>
+                        </div>
+                      )}
+                      {(() => {
+                        const maxDelay = filteredLoansForReport.reduce((max, l) => Math.max(max, getDaysOverdue(l, stats.todayStr)), 0);
+                        return maxDelay > 0 ? (
+                          <div className="px-6 py-3 print:px-4 print:py-1.5 bg-white border border-gray-100 print:border-gray-300 rounded-2xl print:rounded-lg">
+                            <p className="text-[8px] font-black text-gray-400 uppercase">Maior Atraso</p>
+                            <p className="text-xl print:text-sm font-black text-red-700">{maxDelay} dias</p>
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
                   )}
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto print:overflow-visible">
                 {reportType === 'inventory' ? (
                   <table className="w-full text-left border-collapse">
-                    <thead>
+                    <thead className="print:table-header-group">
                       <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                        <th className="px-8 py-5">Tombamento</th>
-                        <th className="px-8 py-5">Título / Autor</th>
-                        <th className="px-8 py-5">Categoria</th>
-                        <th className="px-8 py-5 text-center">Localização</th>
-                        <th className="px-8 py-5 text-center">Exemplares</th>
+                        <th className="px-8 py-5 print:px-3 print:py-2">Tombamento</th>
+                        <th className="px-8 py-5 print:px-3 print:py-2">Título / Autor</th>
+                        <th className="px-8 py-5 print:px-3 print:py-2">Categoria</th>
+                        <th className="px-8 py-5 print:px-3 print:py-2 text-center">Localização</th>
+                        <th className="px-8 py-5 print:px-3 print:py-2 text-center">Exemplares</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
                       {groupedBooksForReport.map(b => (
-                        <tr key={b.title + '|||' + b.author} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-8 py-4 font-black text-gray-400 text-[10px]">
+                        <tr key={b.title + '|||' + b.author} className="hover:bg-gray-50/50 transition-colors break-inside-avoid">
+                          <td className="px-8 py-4 print:px-3 print:py-2 font-black text-gray-400 text-[10px]">
                             {b.copies.map(c => c.internalRegistration).join(', ')}
                           </td>
-                          <td className="px-8 py-4">
+                          <td className="px-8 py-4 print:px-3 print:py-2">
                             <p className="font-black text-gray-900 uppercase text-xs">{b.title}</p>
                             <p className="text-[9px] text-gray-400 font-bold uppercase">{b.author}</p>
                           </td>
-                          <td className="px-8 py-4 text-[10px] font-black text-indigo-400 uppercase">{b.category}</td>
-                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-600 uppercase italic">
+                          <td className="px-8 py-4 print:px-3 print:py-2 text-[10px] font-black text-indigo-400 uppercase">{b.category}</td>
+                          <td className="px-8 py-4 print:px-3 print:py-2 text-center text-[10px] font-black text-gray-600 uppercase italic">
                             {b.locations.join(' | ')}
                           </td>
-                          <td className="px-8 py-4 text-center">
+                          <td className="px-8 py-4 print:px-3 print:py-2 text-center">
                             <div className="inline-flex items-center gap-1 px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg">
                               <span className="text-[10px] font-black text-gray-900">{b.availableCopies}</span>
                               <span className="text-[8px] text-gray-400 font-bold">/ {b.totalCopies}</span>
@@ -2069,39 +2303,124 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                       ))}
                     </tbody>
                   </table>
+                ) : circulationReportMode === 'by_class' ? (
+                  <div className="divide-y divide-gray-200 print:divide-y-0">
+                    {groupedLoansByClass.map((group, groupIdx) => (
+                      <div
+                        key={group.groupName}
+                        className={`p-6 print:p-0 print:mb-6 ${pageBreakByClass && groupIdx > 0 ? 'print:break-before-page' : ''}`}
+                      >
+                        <div className="flex items-center justify-between bg-indigo-50/80 print:bg-gray-100 border border-indigo-100 print:border-gray-400 rounded-2xl print:rounded-none px-5 py-3 print:px-3 print:py-2 mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <GraduationCap size={18} className="text-indigo-600 print:text-black" />
+                            <h4 className="text-sm print:text-xs font-black text-indigo-950 print:text-black uppercase tracking-tight">
+                              {group.groupName}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] font-black uppercase">
+                            <span className="text-indigo-700 print:text-black">
+                              {group.items.length} {group.items.length === 1 ? 'registro' : 'registros'}
+                            </span>
+                            {group.delayedCount > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-lg bg-red-100 text-red-700 border border-red-200 print:border-red-400">
+                                {group.delayedCount} em atraso
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <table className="w-full text-left border-collapse">
+                          <thead className="print:table-header-group">
+                            <tr className="bg-gray-50 text-[10px] print:text-[9px] font-black text-gray-400 print:text-gray-700 uppercase tracking-widest border-b border-gray-200">
+                              <th className="px-4 py-3 print:px-2 print:py-1.5">Leitor</th>
+                              <th className="px-4 py-3 print:px-2 print:py-1.5">Obra Emprestada</th>
+                              <th className="px-4 py-3 print:px-2 print:py-1.5 text-center">Empréstimo</th>
+                              <th className="px-4 py-3 print:px-2 print:py-1.5 text-center">Vencimento</th>
+                              <th className="px-4 py-3 print:px-2 print:py-1.5 text-center">Atraso</th>
+                              <th className="px-4 py-3 print:px-2 print:py-1.5 text-right">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm">
+                            {group.items.map(l => {
+                              const days = getDaysOverdue(l, stats.todayStr);
+                              return (
+                                <tr key={l.id} className="hover:bg-gray-50/50 transition-colors break-inside-avoid">
+                                  <td className="px-4 py-3 print:px-2 print:py-1.5">
+                                    <p className="font-black text-gray-900 uppercase text-xs print:text-[10px]">{l.readerName}</p>
+                                  </td>
+                                  <td className="px-4 py-3 print:px-2 print:py-1.5 text-indigo-700 print:text-gray-900 font-bold uppercase text-xs print:text-[10px] leading-tight">{l.bookTitle}</td>
+                                  <td className="px-4 py-3 print:px-2 print:py-1.5 text-center text-[10px] print:text-[9px] font-bold text-gray-500">{formatDate(l.loanDate)}</td>
+                                  <td className={`px-4 py-3 print:px-2 print:py-1.5 text-center font-black text-[10px] print:text-[9px] ${days > 0 ? 'text-red-600' : 'text-indigo-600 print:text-gray-800'}`}>{formatDate(l.dueDate)}</td>
+                                  <td className="px-4 py-3 print:px-2 print:py-1.5 text-center text-[10px] print:text-[9px] font-black">
+                                    {days > 0 ? (
+                                      <span className="text-red-600">{days} {days === 1 ? 'dia' : 'dias'}</span>
+                                    ) : (
+                                      <span className="text-gray-300 print:text-gray-500">—</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 print:px-2 print:py-1.5 text-right">
+                                    <span className={`text-[9px] print:text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase border ${
+                                      l.status === 'DEVOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                      (days > 0 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-indigo-50 text-indigo-700 border-indigo-100')
+                                    }`}>
+                                      {l.status === 'DEVOLVIDO' ? 'DEVOLVIDO' : (days > 0 ? 'ATRASADO' : 'ATIVO')}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                        <th className="px-8 py-5">Leitor / Perfil</th>
-                        <th className="px-8 py-5">Obra Emprestada</th>
-                        <th className="px-8 py-5 text-center">Data Empr.</th>
-                        <th className="px-8 py-5 text-center">Vencimento</th>
-                        <th className="px-8 py-5 text-right">Status</th>
+                    <thead className="print:table-header-group">
+                      <tr className="bg-gray-50 text-[10px] print:text-[9px] font-black text-gray-400 print:text-gray-700 uppercase tracking-widest border-b border-gray-100">
+                        <th className="px-6 py-5 print:px-2 print:py-2">Leitor / Turma</th>
+                        <th className="px-6 py-5 print:px-2 print:py-2">Obra Emprestada</th>
+                        <th className="px-4 py-5 print:px-2 print:py-2 text-center">Data Empr.</th>
+                        <th className="px-4 py-5 print:px-2 print:py-2 text-center">Vencimento</th>
+                        <th className="px-4 py-5 print:px-2 print:py-2 text-center">Dias Atraso</th>
+                        <th className="px-6 py-5 print:px-2 print:py-2 text-right">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
-                      {filteredLoansForReport.map(l => (
-                        <tr key={l.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-8 py-4">
-                            <p className="font-black text-gray-900 uppercase text-xs">{l.readerName}</p>
-                            <p className="text-[9px] text-gray-400 font-bold uppercase">
-                              {readers.find(r => r.id === l.readerId)?.type} - {readers.find(r => r.id === l.readerId)?.class}
-                            </p>
-                          </td>
-                          <td className="px-8 py-4 px-8 py-4 text-indigo-600 font-black uppercase text-xs leading-tight">{l.bookTitle}</td>
-                          <td className="px-8 py-4 text-center text-[10px] font-black text-gray-400">{formatDate(l.loanDate)}</td>
-                          <td className={`px-8 py-4 text-center font-black text-[10px] ${l.status === 'ATIVO' && l.dueDate < stats.todayStr ? 'text-red-600' : 'text-indigo-600'}`}>{formatDate(l.dueDate)}</td>
-                          <td className="px-8 py-4 text-right">
-                             <span className={`text-[9px] font-black px-3 py-1 rounded-lg uppercase border ${
-                               l.status === 'DEVOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                               (l.dueDate < stats.todayStr ? 'bg-red-50 text-red-700 border-red-100 animate-pulse' : 'bg-indigo-50 text-indigo-700 border-indigo-100')
-                             }`}>
-                               {l.status === 'DEVOLVIDO' ? 'DEVOLVIDO' : (l.dueDate < stats.todayStr ? 'ATRASADO' : 'ATIVO')}
-                             </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredLoansForReport.map(l => {
+                        const reader = readersById.get(l.readerId);
+                        const days = getDaysOverdue(l, stats.todayStr);
+                        return (
+                          <tr key={l.id} className="hover:bg-gray-50/50 transition-colors break-inside-avoid">
+                            <td className="px-6 py-4 print:px-2 print:py-1.5">
+                              <p className="font-black text-gray-900 uppercase text-xs print:text-[10px]">{l.readerName}</p>
+                              <p className="text-[9px] print:text-[8px] text-gray-400 print:text-gray-600 font-bold uppercase">
+                                {reader?.type} - {reader?.class}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 print:px-2 print:py-1.5 text-indigo-600 print:text-gray-900 font-black uppercase text-xs print:text-[10px] leading-tight">{l.bookTitle}</td>
+                            <td className="px-4 py-4 print:px-2 print:py-1.5 text-center text-[10px] print:text-[9px] font-black text-gray-400 print:text-gray-600">{formatDate(l.loanDate)}</td>
+                            <td className={`px-4 py-4 print:px-2 print:py-1.5 text-center font-black text-[10px] print:text-[9px] ${days > 0 ? 'text-red-600' : 'text-indigo-600 print:text-gray-800'}`}>{formatDate(l.dueDate)}</td>
+                            <td className="px-4 py-4 print:px-2 print:py-1.5 text-center text-[10px] print:text-[9px] font-black">
+                              {days > 0 ? (
+                                <span className="px-2.5 py-0.5 rounded-lg bg-red-50 text-red-700 border border-red-200">
+                                  {days} {days === 1 ? 'dia' : 'dias'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300 print:text-gray-500">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 print:px-2 print:py-1.5 text-right">
+                              <span className={`text-[9px] print:text-[8px] font-black px-3 py-1 print:px-2 print:py-0.5 rounded-lg uppercase border ${
+                                l.status === 'DEVOLVIDO' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                (days > 0 ? 'bg-red-50 text-red-700 border-red-100 animate-pulse print:animate-none' : 'bg-indigo-50 text-indigo-700 border-indigo-100')
+                              }`}>
+                                {l.status === 'DEVOLVIDO' ? 'DEVOLVIDO' : (days > 0 ? 'ATRASADO' : 'ATIVO')}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -2225,7 +2544,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative w-full min-w-0">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans relative w-full min-w-0 print:h-auto print:overflow-visible print:bg-white">
       {/* Backdrop Mobile */}
       {isSidebarOpen && (
         <div
@@ -2278,8 +2597,8 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 print:overflow-visible print:block">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-10 shrink-0 gap-3 no-print">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -2293,7 +2612,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           </div>
           <button onClick={toggleFullScreen} className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors hidden sm:block"><Maximize2 size={18} /></button>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar min-w-0 print:overflow-visible print:p-0">
           {renderContent()}
         </div>
       </main>
