@@ -122,6 +122,7 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [readers, setReaders] = useState<Reader[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [classrooms, setClassrooms] = useState<string[]>([]);
   const [loanSearch, setLoanSearch] = useState('');
 
   const fetchAllRows = async (getBuilder: () => any) => {
@@ -146,14 +147,20 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         apaBooksData,
         readersData,
         loansData,
-        apaLoansData
+        apaLoansData,
+        classroomsData
       ] = await Promise.all([
         fetchAllRows(() => supabase.from('library_books').select('*').order('title')),
         fetchAllRows(() => supabase.from('library_apa_books').select('*').order('title')),
         fetchAllRows(() => supabase.from('library_readers').select('*').order('name')),
         fetchAllRows(() => supabase.from('library_loans').select(`*, library_books (title), library_readers (name)`).order('loan_date', { ascending: false })),
-        fetchAllRows(() => supabase.from('library_apa_loans').select(`*, library_apa_books (title), library_readers (name)`).order('loan_date', { ascending: false }))
+        fetchAllRows(() => supabase.from('library_apa_loans').select(`*, library_apa_books (title), library_readers (name)`).order('loan_date', { ascending: false })),
+        fetchAllRows(() => supabase.from('classrooms').select('name').order('name'))
       ]);
+
+      if (classroomsData) {
+        setClassrooms(classroomsData.map((c: any) => (c.name || '').trim()).filter(Boolean));
+      }
 
       let allBooks: Book[] = [];
 
@@ -1310,7 +1317,38 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     return Object.values(groups);
   }, [filteredBooksForReport]);
 
+  const normalizeClassName = (value?: string) =>
+    (value || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[°ºª]/g, 'º')
+      .replace(/\s+/g, ' ');
+
+  const availableReportClasses = useMemo(() => {
+    const classMap = new Map<string, string>();
+    const addClass = (raw?: string) => {
+      const trimmed = (raw || '').trim();
+      if (!trimmed || trimmed === '-') return;
+      const norm = normalizeClassName(trimmed);
+      if (!classMap.has(norm)) {
+        classMap.set(norm, trimmed.toUpperCase());
+      }
+    };
+
+    classrooms.forEach(addClass);
+    readers.forEach(r => {
+      if ((r.type || '').toUpperCase() === 'ALUNO' && r.class) {
+        addClass(r.class);
+      }
+    });
+
+    return Array.from(classMap.values()).sort((a, b) =>
+      a.localeCompare(b, 'pt-BR', { numeric: true })
+    );
+  }, [classrooms, readers]);
+
   const filteredLoansForReport = useMemo(() => {
+    const selectedClassNorm = normalizeClassName(circulationFilter.class);
     return loans.filter(l => {
       // Find reader for type and class
       const reader = readers.find(r => r.id === l.readerId);
@@ -1318,7 +1356,15 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       const matchStatus = !circulationFilter.status || 
         (circulationFilter.status === 'DELAYED' ? (l.status === 'ATIVO' && l.dueDate < stats.todayStr) : l.status === circulationFilter.status);
       const matchType = !circulationFilter.type || reader?.type === circulationFilter.type;
-      const matchClass = !circulationFilter.class || (reader?.class && reader.class.toUpperCase().includes(circulationFilter.class.toUpperCase()));
+      const readerClassNorm = normalizeClassName(reader?.class);
+      const matchClass = !selectedClassNorm || (
+        Boolean(readerClassNorm) && (
+          readerClassNorm === selectedClassNorm ||
+          readerClassNorm.startsWith(`${selectedClassNorm} `) ||
+          readerClassNorm.startsWith(`${selectedClassNorm}-`) ||
+          readerClassNorm.startsWith(`${selectedClassNorm}(`)
+        )
+      );
       const matchFrom = !circulationFilter.dateFrom || l.loanDate >= circulationFilter.dateFrom;
       const matchTo = !circulationFilter.dateTo || l.loanDate <= circulationFilter.dateTo;
       
@@ -1917,12 +1963,15 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Filtrar Turma</label>
-                    <input 
-                      type="text" 
-                      placeholder="EX: 9º ANO A" 
+                    <select 
                       value={circulationFilter.class}
                       onChange={e => setCirculationFilter({ ...circulationFilter, class: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white" />
+                      className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl font-bold text-xs uppercase outline-none focus:bg-white">
+                      <option value="">TODAS AS TURMAS</option>
+                      {availableReportClasses.map(cls => (
+                        <option key={cls} value={cls}>{cls}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Desde</label>
@@ -1954,7 +2003,10 @@ const LibraryModule: React.FC<{ onExit: () => void }> = ({ onExit }) => {
                   <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">
                     {reportType === 'inventory' ? 'Relatório Geral do Acervo (Inventário)' : 'Relatório de Circulação e Comodatos'}
                   </h3>
-                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Biblioteca André Maggi - {new Date().toLocaleDateString('pt-BR')}</p>
+                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">
+                    Biblioteca André Maggi - {new Date().toLocaleDateString('pt-BR')}
+                    {reportType === 'circulation' && circulationFilter.class ? ` • Turma: ${circulationFilter.class}` : ''}
+                  </p>
                 </div>
                 
                 <div className="flex gap-4 no-print">
