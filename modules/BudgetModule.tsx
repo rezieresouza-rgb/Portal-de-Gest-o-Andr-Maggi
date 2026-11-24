@@ -91,7 +91,7 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
         banco: '',
         responsavelInfo: '',
         cargoResponsavel: '',
-        data: new Date().toLocaleDateString('pt-BR')
+        data: ''
     });
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1007,7 +1007,7 @@ const BudgetModule: React.FC<{ user: User }> = ({ user }) => {
                                     <tr className="border-b border-black">
                                         <td className="w-8 text-center font-bold bg-gray-100 border-r border-black p-1">16</td>
                                         <td className="w-32 font-bold p-1">Razão Social/Nome:</td>
-                                        <td colSpan={6} className="font-bold p-1 uppercase">{supplierInfo.razaoSocial || '________________________________________'}</td>
+                                        <td colSpan={6} className="font-bold p-1 uppercase">{supplierInfo.razaoSocial}</td>
                                     </tr>
                                     <tr className="border-b border-black">
                                         <td className="text-center font-bold bg-gray-100 border-r border-black p-1">17</td>
