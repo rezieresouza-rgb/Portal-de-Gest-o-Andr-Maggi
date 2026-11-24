@@ -299,6 +299,7 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     group: 'ALL',
     category: 'ALL'
   });
+  const [showCategorySummaryPanel, setShowCategorySummaryPanel] = useState(false);
 
   const [reportFilters, setReportFilters] = useState({
     fund: 'all',
@@ -659,8 +660,9 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
     const groupMatch = !filters.group || filters.group === 'ALL' || tx.group === filters.group;
 
     // Filtro Categoria Contábil
+    const txCategoryNorm = ((tx.category && tx.category.trim()) || 'Sem Categoria Contábil').toUpperCase();
     const categoryMatch = !filters.category || filters.category === 'ALL' || (
-      tx.category && tx.category.trim().toUpperCase() === filters.category.trim().toUpperCase()
+      txCategoryNorm === filters.category.trim().toUpperCase()
     );
 
     return searchMatch && invoiceMatch && valueMatch && dateMatch && typeMatch && sourceMatch && groupMatch && categoryMatch;
@@ -691,32 +693,135 @@ const FinanceModule: React.FC<{ onExit: () => void; user: User }> = ({ onExit, u
       });
   }, [funds, activeTab, filters]);
 
-  // [NOVO] Resumo consolidado de gastos por Categoria Contábil para o fundo ativo
+  // [NOVO] Resumo consolidado de Entradas e Saídas por Categoria Contábil para o fundo ativo (ou global no Relatório de Notas)
   const categoryExpensesSummary = useMemo(() => {
-    if (!funds[activeTab]) return [];
-    const map = new Map<string, { category: string, totalExpense: number, totalEntry: number, count: number, group: 'CUSTEIO' | 'CAPITAL' }>();
-    
-    const txs = funds[activeTab].transactions;
-    txs.forEach(t => {
-      const cat = (t.category && t.category.trim()) || 'Sem Categoria Contábil';
-      const current = map.get(cat) || { 
-        category: cat, 
-        totalExpense: 0, 
-        totalEntry: 0, 
-        count: 0, 
-        group: (t.group || 'CUSTEIO') as 'CUSTEIO' | 'CAPITAL' 
+    const sourceTxs: Transaction[] = funds[activeTab]
+      ? funds[activeTab].transactions
+      : (Object.values(funds) as FundData[]).flatMap(f => f.transactions || []);
+
+    const map = new Map<string, {
+      category: string;
+      totalExpense: number;
+      totalEntry: number;
+      expenseCount: number;
+      entryCount: number;
+      federalEntry: number;
+      estadualEntry: number;
+      federalExpense: number;
+      estadualExpense: number;
+      count: number;
+      group: 'CUSTEIO' | 'CAPITAL';
+    }>();
+
+    sourceTxs.forEach(t => {
+      const displayCat = (t.category && t.category.trim()) || 'Sem Categoria Contábil';
+      const normKey = displayCat.toUpperCase();
+      const current = map.get(normKey) || {
+        category: displayCat,
+        totalExpense: 0,
+        totalEntry: 0,
+        expenseCount: 0,
+        entryCount: 0,
+        federalEntry: 0,
+        estadualEntry: 0,
+        federalExpense: 0,
+        estadualExpense: 0,
+        count: 0,
+        group: (t.group || 'CUSTEIO') as 'CUSTEIO' | 'CAPITAL'
       };
+      const val = Number(t.value || 0);
+      const src = t.fundingSource;
       if (t.type === 'EXPENSE') {
-        current.totalExpense += Number(t.value || 0);
+        current.totalExpense += val;
+        current.expenseCount += 1;
+        if (src === 'FEDERAL') current.federalExpense += val;
+        else if (src === 'ESTADUAL') current.estadualExpense += val;
       } else if (t.type === 'ENTRY') {
-        current.totalEntry += Number(t.value || 0);
+        current.totalEntry += val;
+        current.entryCount += 1;
+        if (src === 'FEDERAL') current.federalEntry += val;
+        else if (src === 'ESTADUAL') current.estadualEntry += val;
       }
       current.count += 1;
-      map.set(cat, current);
+      map.set(normKey, current);
     });
 
-    return Array.from(map.values()).sort((a, b) => b.totalExpense - a.totalExpense);
+    return Array.from(map.values()).sort(
+      (a, b) => (b.totalEntry + b.totalExpense) - (a.totalEntry + a.totalExpense)
+    );
   }, [funds, activeTab]);
+
+  // Totais dinâmicos do recorte filtrado no Livro Caixa (Entradas, Saídas, Saldo e quebra Federal/Estadual)
+  const filteredLivroCaixaTotals = useMemo(() => {
+    let totalEntry = 0;
+    let totalExpense = 0;
+    let entryCount = 0;
+    let expenseCount = 0;
+    let federalEntry = 0;
+    let estadualEntry = 0;
+    let federalExpense = 0;
+    let estadualExpense = 0;
+    let custeioTotal = 0;
+    let capitalTotal = 0;
+
+    activeFundTransactions.forEach(t => {
+      const val = Number(t.value || 0);
+      if (t.type === 'ENTRY') {
+        totalEntry += val;
+        entryCount += 1;
+        if (t.fundingSource === 'FEDERAL') federalEntry += val;
+        else if (t.fundingSource === 'ESTADUAL') estadualEntry += val;
+      } else if (t.type === 'EXPENSE') {
+        totalExpense += val;
+        expenseCount += 1;
+        if (t.fundingSource === 'FEDERAL') federalExpense += val;
+        else if (t.fundingSource === 'ESTADUAL') estadualExpense += val;
+      }
+      if (t.group === 'CAPITAL') capitalTotal += val;
+      else custeioTotal += val;
+    });
+
+    const hasActiveFilters = Boolean(
+      filters.search ||
+      filters.invoice ||
+      filters.value ||
+      filters.date ||
+      filters.type !== 'ALL' ||
+      filters.fundingSource !== 'ALL' ||
+      filters.group !== 'ALL' ||
+      filters.category !== 'ALL'
+    );
+
+    return {
+      totalEntry,
+      totalExpense,
+      netBalance: totalEntry - totalExpense,
+      entryCount,
+      expenseCount,
+      federalEntry,
+      estadualEntry,
+      federalExpense,
+      estadualExpense,
+      custeioTotal,
+      capitalTotal,
+      totalCount: activeFundTransactions.length,
+      hasActiveFilters
+    };
+  }, [activeFundTransactions, filters]);
+
+  const formatCategoryOptionLabel = (c: { category: string; totalEntry: number; totalExpense: number; count: number }) => {
+    const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    if (c.totalEntry > 0 && c.totalExpense === 0) {
+      return `${c.category} (+R$ ${fmt(c.totalEntry)} • ${c.count}x)`;
+    }
+    if (c.totalExpense > 0 && c.totalEntry === 0) {
+      return `${c.category} (-R$ ${fmt(c.totalExpense)} • ${c.count}x)`;
+    }
+    if (c.totalEntry > 0 && c.totalExpense > 0) {
+      return `${c.category} (+R$ ${fmt(c.totalEntry)} / -R$ ${fmt(c.totalExpense)})`;
+    }
+    return `${c.category} (R$ 0,00)`;
+  };
 
   // Filtro específico para relatório de impostos AF
   const afTaxReport = useMemo(() => {
@@ -2115,8 +2220,22 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                       </div>
 
                       <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 shadow-xl space-y-6 backdrop-blur-md">
-                        <div className="flex justify-between items-center border-b border-white/5 pb-6">
-                          <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
+                        <div className="flex flex-wrap justify-between items-center gap-4 border-b border-white/5 pb-6">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2"><ArrowRightLeft className="text-blue-400" size={20} /> Livro Caixa</h3>
+                            <button
+                              type="button"
+                              onClick={() => setShowCategorySummaryPanel(prev => !prev)}
+                              className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 no-print cursor-pointer ${
+                                showCategorySummaryPanel
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 shadow-sm'
+                                  : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
+                              }`}
+                              title="Ver soma consolidada de todas as categorias contábeis (entradas e saídas)"
+                            >
+                              <PieChart size={13} /> Resumo por Categoria ({categoryExpensesSummary.length})
+                            </button>
+                          </div>
                           <div className="flex items-center gap-3">
                              {/* [NOVO] Barra de Filtros Completa para Submódulos */}
                              <div className="flex flex-wrap items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 no-print">
@@ -2186,13 +2305,17 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                    <select
                                       value={filters.category}
                                       onChange={e => setFilters({...filters, category: e.target.value})}
-                                      className="bg-transparent px-3 py-2 text-[10px] font-black uppercase text-emerald-300 outline-none cursor-pointer max-w-[200px] truncate"
+                                      className="bg-transparent px-3 py-2 text-[10px] font-black uppercase text-emerald-300 outline-none cursor-pointer max-w-[260px] truncate"
                                       title="Filtrar por Categoria Contábil"
                                    >
                                       <option value="ALL" className="bg-gray-900 text-white">📁 Todas Categorias Contábeis</option>
                                       {categoryExpensesSummary.map(c => (
-                                         <option key={c.category} value={c.category} className="bg-gray-900 text-emerald-300">
-                                            {c.category} ({c.totalExpense > 0 ? `R$ ${c.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'})
+                                         <option
+                                            key={c.category}
+                                            value={c.category}
+                                            className={`bg-gray-900 ${c.totalEntry > 0 && c.totalExpense === 0 ? 'text-emerald-300' : c.totalExpense > 0 && c.totalEntry === 0 ? 'text-rose-300' : 'text-blue-300'}`}
+                                         >
+                                            {formatCategoryOptionLabel(c)}
                                          </option>
                                       ))}
                                    </select>
@@ -2227,32 +2350,217 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                           </div>
                         </div>
 
-                        {/* BANNER INFORMATIVO QUANDO UMA CATEGORIA CONTÁBIL ESTIVER FILTRADA */}
-                        {filters.category !== 'ALL' && (
-                          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-200 animate-in fade-in">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
-                                <FolderCheck size={20} />
-                              </div>
+                        {/* PAINEL EXPANSÍVEL: RESUMO CONSOLIDADO POR CATEGORIA CONTÁBIL */}
+                        {showCategorySummaryPanel && (
+                          <div className="bg-slate-900/70 border border-white/10 rounded-2xl p-5 space-y-4 animate-in fade-in no-print">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                               <div>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 block">
-                                  Filtro Ativo • Categoria Contábil
-                                </span>
-                                <h4 className="text-xs font-black text-white uppercase">
-                                  {filters.category}
+                                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                  <PieChart size={15} className="text-emerald-400" /> Soma por Categoria Contábil — {funds[activeTab]?.name}
                                 </h4>
-                                <p className="text-[11px] text-emerald-200/80 font-bold mt-0.5">
-                                  Total Gasto nesta Categoria: <span className="text-emerald-300 font-black">R$ {activeFundTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, curr) => acc + (curr.value || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> • <span className="text-white">{activeFundTransactions.length} lançamentos</span> encontrados
+                                <p className="text-[10px] text-white/50 font-semibold mt-0.5">
+                                  Clique em qualquer categoria abaixo para filtrar automaticamente o Livro Caixa
                                 </p>
                               </div>
+                              <button
+                                type="button"
+                                onClick={() => setShowCategorySummaryPanel(false)}
+                                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-lg text-[9px] font-black uppercase flex items-center gap-1"
+                              >
+                                <X size={12} /> Fechar
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setFilters({ ...filters, category: 'ALL' })}
-                              className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer flex items-center gap-1"
-                            >
-                              <X size={12} /> Limpar Filtro
-                            </button>
+
+                            {categoryExpensesSummary.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[340px] overflow-y-auto pr-1">
+                                {categoryExpensesSummary.map(catItem => {
+                                  const isSelected = filters.category !== 'ALL' && filters.category.trim().toUpperCase() === catItem.category.trim().toUpperCase();
+                                  const isEntryOnly = catItem.totalEntry > 0 && catItem.totalExpense === 0;
+                                  const isExpenseOnly = catItem.totalExpense > 0 && catItem.totalEntry === 0;
+                                  return (
+                                    <button
+                                      key={catItem.category}
+                                      type="button"
+                                      onClick={() =>
+                                        setFilters(prev => ({
+                                          ...prev,
+                                          category: isSelected ? 'ALL' : catItem.category
+                                        }))
+                                      }
+                                      className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-emerald-500/20 border-emerald-400/60 ring-1 ring-emerald-400/40'
+                                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                      }`}
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <span className="text-[10px] font-black text-white uppercase leading-tight line-clamp-2">
+                                          {catItem.category}
+                                        </span>
+                                        <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-black text-white/70 shrink-0">
+                                          {catItem.count}x
+                                        </span>
+                                      </div>
+
+                                      <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-2">
+                                        {isEntryOnly ? (
+                                          <div>
+                                            <span className="text-[8px] font-black uppercase tracking-wider text-emerald-400/80 block">Total Entrou</span>
+                                            <span className="text-sm font-black text-emerald-400">
+                                              + R$ {catItem.totalEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                          </div>
+                                        ) : isExpenseOnly ? (
+                                          <div>
+                                            <span className="text-[8px] font-black uppercase tracking-wider text-red-400/80 block">Total Saiu</span>
+                                            <span className="text-sm font-black text-red-400">
+                                              - R$ {catItem.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-3 text-xs font-black">
+                                            <span className="text-emerald-400">
+                                              +R$ {catItem.totalEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                            <span className="text-red-400">
+                                              -R$ {catItem.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {(catItem.federalEntry > 0 || catItem.estadualEntry > 0 || catItem.federalExpense > 0 || catItem.estadualExpense > 0) && (
+                                        <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-2 text-[9px] font-bold">
+                                          {(catItem.federalEntry > 0 || catItem.federalExpense > 0) && (
+                                            <span className="text-emerald-300/90">
+                                              Federal: R$ {(isEntryOnly ? catItem.federalEntry : isExpenseOnly ? catItem.federalExpense : catItem.federalEntry - catItem.federalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                          )}
+                                          {(catItem.estadualEntry > 0 || catItem.estadualExpense > 0) && (
+                                            <span className="text-indigo-300/90">
+                                              Estadual: R$ {(isEntryOnly ? catItem.estadualEntry : isExpenseOnly ? catItem.estadualExpense : catItem.estadualEntry - catItem.estadualExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-white/40 font-bold text-center py-4 uppercase">
+                                Nenhum lançamento registrado neste recurso ainda.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* BANNER DE SOMA AUTOMÁTICA QUANDO QUALQUER FILTRO (EX: CATEGORIA CONTÁBIL / RENDIMENTO) ESTIVER ATIVO */}
+                        {filteredLivroCaixaTotals.hasActiveFilters && (
+                          <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-indigo-500/10 border border-emerald-500/30 rounded-2xl p-5 space-y-4 animate-in fade-in">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
+                                  <FolderCheck size={20} />
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 block">
+                                    Soma Automática do Recorte Filtrado • {filteredLivroCaixaTotals.totalCount} lançamento{filteredLivroCaixaTotals.totalCount !== 1 ? 's' : ''}
+                                  </span>
+                                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                    {filters.category !== 'ALL' && (
+                                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-black text-white uppercase">
+                                        📁 {filters.category}
+                                      </span>
+                                    )}
+                                    {filters.fundingSource !== 'ALL' && (
+                                      <span className="px-2 py-0.5 rounded-lg bg-purple-500/20 border border-purple-400/40 text-[10px] font-black text-purple-200 uppercase">
+                                        {filters.fundingSource}
+                                      </span>
+                                    )}
+                                    {filters.type !== 'ALL' && (
+                                      <span className="px-2 py-0.5 rounded-lg bg-blue-500/20 border border-blue-400/40 text-[10px] font-black text-blue-200 uppercase">
+                                        {filters.type === 'ENTRY' ? 'Entradas' : 'Saídas'}
+                                      </span>
+                                    )}
+                                    {filters.group !== 'ALL' && (
+                                      <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-[10px] font-black text-amber-200 uppercase">
+                                        {filters.group}
+                                      </span>
+                                    )}
+                                    {filters.search && (
+                                      <span className="px-2 py-0.5 rounded-lg bg-white/10 text-[10px] font-bold text-white/80">
+                                        Busca: "{filters.search}"
+                                      </span>
+                                    )}
+                                    {filters.date && (
+                                      <span className="px-2 py-0.5 rounded-lg bg-white/10 text-[10px] font-bold text-white/80">
+                                        Data: {filters.date.split('-').reverse().join('/')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setFilters({ search: '', invoice: '', value: '', date: '', type: 'ALL', fundingSource: 'ALL', group: 'ALL', category: 'ALL' })}
+                                className="px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer flex items-center gap-1 no-print"
+                              >
+                                <X size={12} /> Limpar Filtros
+                              </button>
+                            </div>
+
+                            {/* Cards de Soma: Total Entrou | Total Saiu | Saldo do Recorte */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300/80 flex items-center gap-1">
+                                  <TrendingUp size={12} /> Total Entradas (Quanto Entrou)
+                                </span>
+                                <p className="text-xl font-black text-emerald-400 mt-1">
+                                  R$ {filteredLivroCaixaTotals.totalEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                                <div className="text-[10px] text-emerald-200/70 font-bold mt-1 flex flex-wrap gap-2">
+                                  <span>{filteredLivroCaixaTotals.entryCount} entrada{filteredLivroCaixaTotals.entryCount !== 1 ? 's' : ''}</span>
+                                  {filteredLivroCaixaTotals.federalEntry > 0 && (
+                                    <span className="text-emerald-300">• Federal: R$ {filteredLivroCaixaTotals.federalEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  )}
+                                  {filteredLivroCaixaTotals.estadualEntry > 0 && (
+                                    <span className="text-indigo-300">• Estadual: R$ {filteredLivroCaixaTotals.estadualEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-3.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-red-300/80 flex items-center gap-1">
+                                  <TrendingDown size={12} /> Total Saídas (Quanto Saiu)
+                                </span>
+                                <p className="text-xl font-black text-red-400 mt-1">
+                                  R$ {filteredLivroCaixaTotals.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                                <div className="text-[10px] text-red-200/70 font-bold mt-1 flex flex-wrap gap-2">
+                                  <span>{filteredLivroCaixaTotals.expenseCount} saída{filteredLivroCaixaTotals.expenseCount !== 1 ? 's' : ''}</span>
+                                  {filteredLivroCaixaTotals.federalExpense > 0 && (
+                                    <span className="text-emerald-300">• Federal: R$ {filteredLivroCaixaTotals.federalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  )}
+                                  {filteredLivroCaixaTotals.estadualExpense > 0 && (
+                                    <span className="text-indigo-300">• Estadual: R$ {filteredLivroCaixaTotals.estadualExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="bg-white/5 border border-white/15 rounded-xl p-3.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-blue-300/80 flex items-center gap-1">
+                                  <Calculator size={12} /> Saldo Líquido do Filtro
+                                </span>
+                                <p className={`text-xl font-black mt-1 ${filteredLivroCaixaTotals.netBalance >= 0 ? 'text-blue-300' : 'text-red-400'}`}>
+                                  R$ {filteredLivroCaixaTotals.netBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                                <div className="text-[10px] text-white/50 font-bold mt-1">
+                                  Entradas − Saídas dos itens listados
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
 
@@ -2326,7 +2634,40 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   </td>
                                 </tr>
                               ))}
+                              {activeFundTransactions.length === 0 && (
+                                <tr>
+                                  <td colSpan={5} className="px-6 py-10 text-center text-white/40 font-bold uppercase text-xs">
+                                    Nenhum lançamento encontrado para os filtros selecionados.
+                                  </td>
+                                </tr>
+                              )}
                             </tbody>
+                            {activeFundTransactions.length > 0 && (
+                              <tfoot className="border-t-2 border-white/15 bg-white/[0.04]">
+                                <tr>
+                                  <td colSpan={3} className="px-6 py-4">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                                      Total dos {filteredLivroCaixaTotals.totalCount} lançamento{filteredLivroCaixaTotals.totalCount !== 1 ? 's' : ''} exibido{filteredLivroCaixaTotals.totalCount !== 1 ? 's' : ''}
+                                    </span>
+                                    <div className="flex flex-wrap gap-3 mt-1 text-[10px] font-bold">
+                                      <span className="text-emerald-400">
+                                        Entradas: + R$ {filteredLivroCaixaTotals.totalEntry.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({filteredLivroCaixaTotals.entryCount})
+                                      </span>
+                                      <span className="text-red-400">
+                                        Saídas: - R$ {filteredLivroCaixaTotals.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({filteredLivroCaixaTotals.expenseCount})
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right font-black">
+                                    <span className="block text-[8px] uppercase tracking-widest text-white/40">Saldo Exibido</span>
+                                    <span className={`text-sm ${filteredLivroCaixaTotals.netBalance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      R$ {filteredLivroCaixaTotals.netBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </td>
+                                  <td></td>
+                                </tr>
+                              </tfoot>
+                            )}
                           </table>
                         </div>
                       </div>
@@ -2537,7 +2878,7 @@ p3 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-white/5 te
                                   <option value="ALL" className="bg-gray-900 text-white">📁 Categorias (Todas)</option>
                                   {categoryExpensesSummary.map(c => (
                                      <option key={c.category} value={c.category} className="bg-gray-900 text-emerald-300">
-                                        {c.category} ({c.totalExpense > 0 ? `R$ ${c.totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'})
+                                        {formatCategoryOptionLabel(c)}
                                      </option>
                                   ))}
                                </select>
