@@ -30,6 +30,7 @@ import { ToastProvider } from './components/Toast';
 import { AcademicYearProvider } from './contexts/AcademicYearContext';
 import { INITIAL_STUDENTS } from './constants/initialData';
 import { resolveOfficialStaffRole } from './utils/signatureService';
+import { supabase } from './supabaseClient';
 
 const GamificationModule = React.lazy(() => import('./modules/GamificationModule'));
 
@@ -40,7 +41,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(() => {
     try {
       // SANEAMENTO DE LEGADO: Limpar chaves antigas que podem causar crash
-      const legacyKeys = ['active_session', 'access_logs', 'school_announcements', 'portal_module_permissions'];
+      const legacyKeys = ['active_session', 'access_logs', 'school_announcements', 'portal_module_permissions', 'portal_module_permissions_v8'];
       legacyKeys.forEach(key => {
         if (localStorage.getItem(key)) localStorage.removeItem(key);
       });
@@ -106,6 +107,71 @@ const App: React.FC = () => {
       clearTimeout(timeout);
     };
   }, [user, logout]);
+
+  // Re-sincroniza role e função (RH) da sessão ativa ao abrir/atualizar o portal
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const syncSessionStaffRole = async () => {
+      try {
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('role, name, cpf, login')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const resolvedRole = (userRow?.role || user.role) as User['role'];
+        const resolvedName = userRow?.name || user.name;
+        const cpfRaw = (userRow?.cpf || (user as any).cpf || userRow?.login || user.login || '').replace(/\D/g, '');
+
+        let staffJobFunction: string | null = null;
+        if (cpfRaw.length === 11) {
+          const res = await supabase
+            .from('staff')
+            .select('job_function')
+            .or(`cpf.eq.${cpfRaw},cpf.ilike.%${cpfRaw}%`)
+            .limit(1);
+          if (res.data && res.data.length > 0 && res.data[0].job_function) {
+            staffJobFunction = res.data[0].job_function;
+          }
+        }
+        if (!staffJobFunction && resolvedName) {
+          const res = await supabase
+            .from('staff')
+            .select('job_function')
+            .ilike('name', `%${resolvedName}%`)
+            .limit(1);
+          if (res.data && res.data.length > 0 && res.data[0].job_function) {
+            staffJobFunction = res.data[0].job_function;
+          }
+        }
+
+        const nextJobFunction = resolveOfficialStaffRole(
+          resolvedName,
+          staffJobFunction || user.jobFunction || resolvedRole
+        );
+
+        if (cancelled) return;
+        if (nextJobFunction !== user.jobFunction || resolvedRole !== user.role) {
+          const updated: User = {
+            ...user,
+            role: resolvedRole,
+            jobFunction: nextJobFunction
+          };
+          localStorage.setItem('active_session_v1', JSON.stringify(updated));
+          setUser(updated);
+        }
+      } catch (err) {
+        console.warn('Erro ao re-sincronizar função da sessão:', err);
+      }
+    };
+
+    syncSessionStaffRole();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const [publicLocation, setPublicLocation] = useState<string | null>(() => {
     try {

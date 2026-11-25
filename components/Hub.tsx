@@ -42,8 +42,9 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
   'COORDENADOR PEDAGÓGICO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'psychosocial', 'mediacao', 'pedagogical', 'teacher', 'scheduling', 'library', 'almoxarifado', 'limpeza', 'infraestrutura', 'patrimonio', 'sala_recursos', 'projeto_apa', 'civico_militar', 'training', 'educarte', 'gamification'],
   'SECRETÁRIO': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'sala_recursos', 'projeto_apa', 'civico_militar', 'training', 'educarte', 'gamification'],
   'SECRETARIA': ['secretariat', 'merenda', 'finance', 'busca_ativa', 'pedagogical', 'scheduling', 'library', 'patrimonio', 'limpeza', 'infraestrutura', 'sala_recursos', 'projeto_apa', 'civico_militar', 'training', 'educarte', 'gamification'],
-  'PROFESSOR': ['teacher', 'scheduling', 'library', 'almoxarifado', 'civico_militar', 'training', 'mediacao', 'educarte', 'gamification'],
+  'PROFESSOR': ['teacher', 'scheduling', 'training', 'gamification'],
   'REGÊNCIA': ['teacher', 'scheduling', 'training', 'gamification'],
+  'REGENCIA': ['teacher', 'scheduling', 'training', 'gamification'],
   'PSICOSSOCIAL': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'sala_recursos', 'projeto_apa', 'teacher', 'training', 'educarte', 'gamification'],
   'MEDIADOR': ['psychosocial', 'mediacao', 'busca_ativa', 'scheduling', 'sala_recursos', 'projeto_apa', 'teacher', 'training', 'educarte', 'gamification'],
   'OFICIAL DE GESTÃO CIVICO-MILITAR': ['civico_militar', 'scheduling', 'training', 'educarte'],
@@ -71,7 +72,8 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
 const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate }) => {
   const [dynamicPermissions, setDynamicPermissions] = useState<Record<string, string[]>>(() => {
     try {
-      const saved = localStorage.getItem('portal_module_permissions_v8');
+      localStorage.removeItem('portal_module_permissions_v8');
+      const saved = localStorage.getItem('portal_module_permissions_v9');
       const parsed = saved ? JSON.parse(saved) : null;
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         return { ...DEFAULT_PERMISSIONS, ...parsed };
@@ -86,7 +88,8 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
   useEffect(() => {
     const loadPermissions = () => {
       try {
-        const saved = localStorage.getItem('portal_module_permissions_v8');
+        localStorage.removeItem('portal_module_permissions_v8');
+        const saved = localStorage.getItem('portal_module_permissions_v9');
         const parsed = saved ? JSON.parse(saved) : null;
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           setDynamicPermissions({ ...DEFAULT_PERMISSIONS, ...parsed });
@@ -96,7 +99,7 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
         console.error("Error loading permissions:", e);
       }
 
-      localStorage.setItem('portal_module_permissions_v8', JSON.stringify(DEFAULT_PERMISSIONS));
+      localStorage.setItem('portal_module_permissions_v9', JSON.stringify(DEFAULT_PERMISSIONS));
       setDynamicPermissions(DEFAULT_PERMISSIONS);
     };
 
@@ -291,9 +294,19 @@ const Hub: React.FC<HubProps> = ({ user, onLogout, onModuleSelect, onUserUpdate 
     }
 
     // Prioriza a Função para permissões dinâmicas, fallback para Role
+    const stripAccents = (v: string) =>
+      v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+
     const rawKey = user.jobFunction || user.role || '';
     const permissionKey = rawKey.trim().toUpperCase();
-    let rolePermissions = (dynamicPermissions && (dynamicPermissions[permissionKey] || dynamicPermissions[rawKey])) || DEFAULT_PERMISSIONS[permissionKey] || DEFAULT_PERMISSIONS[rawKey];
+    const normKey = stripAccents(rawKey);
+    const effectiveKey = normKey.includes('REGENC') ? 'REGÊNCIA' : permissionKey;
+
+    let rolePermissions =
+      (dynamicPermissions && (dynamicPermissions[effectiveKey] || dynamicPermissions[permissionKey] || dynamicPermissions[rawKey])) ||
+      DEFAULT_PERMISSIONS[effectiveKey] ||
+      DEFAULT_PERMISSIONS[permissionKey] ||
+      DEFAULT_PERMISSIONS[rawKey];
     
     // Fallback para Role caso a Função específica não possua mapeamento
     if (!rolePermissions || rolePermissions.length === 0) {
