@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   Save,
   Edit,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import { OFFICIAL_MENUS } from '../constants/menus';
 import { supabase } from '../supabaseClient';
@@ -71,6 +72,20 @@ const ENTRADA_KEYWORDS = [
   'AÇÚCAR', 'CHÁ', 'ACHOCOLATADO', 'AVEIA', 'MEL'
 ];
 
+const normalizeText = (text?: string) =>
+  (text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const formatRecordDate = (dateStr?: string) => {
+  if (!dateStr) return '';
+  const dateOnly = dateStr.split('T')[0];
+  const dateObj = new Date(dateOnly + 'T12:00:00');
+  return isNaN(dateObj.getTime()) ? dateStr : dateObj.toLocaleDateString('pt-BR');
+};
+
 const MenuChecklist: React.FC = () => {
   const [viewMode, setViewMode] = useState<'form' | 'history'>('form');
   const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
@@ -81,19 +96,38 @@ const MenuChecklist: React.FC = () => {
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       console.error("Erro ao carregar histórico diário", e);
+      return [];
     }
   });
 
   const [historySearchTerm, setHistorySearchTerm] = useState('');
+  const [historyDateFilter, setHistoryDateFilter] = useState('');
+
+  const hasActiveHistoryFilter = Boolean(historySearchTerm.trim() || historyDateFilter);
 
   const sortedHistory = useMemo(() => {
     let list = [...history];
 
+    if (historyDateFilter) {
+      list = list.filter(r => (r.date || '').split('T')[0] === historyDateFilter);
+    }
+
     if (historySearchTerm.trim()) {
-      const term = historySearchTerm.toLowerCase();
+      const tokens = normalizeText(historySearchTerm).split(/\s+/).filter(Boolean);
       list = list.filter(r => {
-        const formattedDate = new Date(r.date + 'T12:00:00').toLocaleDateString('pt-BR');
-        return r.date.includes(term) || formattedDate.includes(term) || r.shift?.toLowerCase().includes(term);
+        const formattedDate = formatRecordDate(r.date);
+        const shortYearDate = formattedDate.replace(/\/(\d{2})(\d{2})$/, '/$2');
+        const searchableText = normalizeText([
+          r.date,
+          formattedDate,
+          shortYearDate,
+          formattedDate.replace(/\//g, '-'),
+          r.shift,
+          r.principal?.dishName,
+          r.entrada?.dishName
+        ].filter(Boolean).join(' '));
+
+        return tokens.every(token => searchableText.includes(token));
       });
     }
 
@@ -111,7 +145,7 @@ const MenuChecklist: React.FC = () => {
       // 3. Timestamp de criação decrescente
       return (b.timestamp || 0) - (a.timestamp || 0);
     });
-  }, [history, historySearchTerm]);
+  }, [history, historySearchTerm, historyDateFilter]);
 
   const [nutricaoStaff, setNutricaoStaff] = useState<StaffMember[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -706,19 +740,67 @@ const MenuChecklist: React.FC = () => {
       ) : (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                <History className="text-emerald-600" /> Histórico de Registros Auditados
-              </h3>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Data ou Turno..." 
-                  value={historySearchTerm}
-                  onChange={(e) => setHistorySearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20" 
-                />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+              <div>
+                <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                  <History className="text-emerald-600" /> Histórico de Registros Auditados
+                </h3>
+                {hasActiveHistoryFilter && (
+                  <p className="text-[11px] font-bold text-emerald-700 mt-1">
+                    {sortedHistory.length === 1
+                      ? '1 registro encontrado'
+                      : `${sortedHistory.length} registros encontrados`}
+                    {' '}de {history.length}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div className="relative flex-1 sm:w-72 md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Buscar por cardápio, data ou turno..."
+                    value={historySearchTerm}
+                    onChange={(e) => setHistorySearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-9 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  />
+                  {historySearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setHistorySearchTerm('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-lg"
+                      title="Limpar texto da busca"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative flex items-center">
+                  <Calendar className="absolute left-3 text-emerald-600 pointer-events-none" size={15} />
+                  <input
+                    type="date"
+                    value={historyDateFilter}
+                    onChange={(e) => setHistoryDateFilter(e.target.value)}
+                    aria-label="Filtrar por data"
+                    title="Filtrar por data"
+                    className="w-full sm:w-auto pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  />
+                </div>
+
+                {hasActiveHistoryFilter && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistorySearchTerm('');
+                      setHistoryDateFilter('');
+                    }}
+                    className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shrink-0"
+                  >
+                    <X size={14} /> Limpar
+                  </button>
+                )}
               </div>
             </div>
 
@@ -726,34 +808,63 @@ const MenuChecklist: React.FC = () => {
               {sortedHistory.length > 0 ? sortedHistory.map(record => (
                 <div
                   key={record.id}
-                  className="bg-white p-6 rounded-[2rem] border border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all group relative overflow-hidden"
+                  className="bg-white p-6 rounded-[2rem] border border-gray-100 hover:border-emerald-300 hover:shadow-lg transition-all group relative overflow-hidden flex flex-col justify-between"
                 >
-                  <div className="absolute -top-1 -right-1 w-12 h-12 bg-emerald-500/10 rotate-45 flex items-end justify-center pb-1">
-                    <Lock size={12} className="text-emerald-600 -rotate-45" />
-                  </div>
+                  <div>
+                    <div className="absolute -top-1 -right-1 w-12 h-12 bg-emerald-500/10 rotate-45 flex items-end justify-center pb-1">
+                      <Lock size={12} className="text-emerald-600 -rotate-45" />
+                    </div>
 
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
-                      <Calendar size={20} />
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                        <Calendar size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Documento Registrado</p>
+                        <p className="text-sm font-black text-gray-900">{formatRecordDate(record.date)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Documento Registrado</p>
-                      <p className="text-sm font-black text-gray-900">{new Date(record.date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                      <span className="text-gray-400">Turno:</span>
-                      <span className="text-gray-900 font-black">{record.shift || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                      <span className="text-gray-400">Volume Tot.:</span>
-                      <span className="text-gray-700 font-black">{((Number(record.entrada?.mealsServed) || 0) + (Number(record.principal?.mealsServed) || 0))} Refeições</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                      <span className="text-gray-400">Repetições:</span>
-                      <span className="text-emerald-700 font-black">{((Number(record.entrada?.repeats) || 0) + (Number(record.principal?.repeats) || 0))} Repetições</span>
+                    {(record.principal?.dishName || record.entrada?.dishName) && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-2xl border border-gray-100 space-y-1.5">
+                        {record.principal?.dishName && (
+                          <div>
+                            <span className="text-[8px] font-black text-emerald-600 uppercase tracking-wider block">Cardápio Principal</span>
+                            <p
+                              className="text-[11px] font-black text-gray-800 uppercase leading-snug line-clamp-2"
+                              title={record.principal.dishName}
+                            >
+                              {record.principal.dishName}
+                            </p>
+                          </div>
+                        )}
+                        {record.entrada?.dishName && (
+                          <div>
+                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider block">Lanche / Entrada</span>
+                            <p
+                              className="text-[10px] font-bold text-gray-600 uppercase leading-snug line-clamp-1"
+                              title={record.entrada.dishName}
+                            >
+                              {record.entrada.dishName}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                        <span className="text-gray-400">Turno:</span>
+                        <span className="text-gray-900 font-black">{record.shift || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                        <span className="text-gray-400">Volume Tot.:</span>
+                        <span className="text-gray-700 font-black">{((Number(record.entrada?.mealsServed) || 0) + (Number(record.principal?.mealsServed) || 0))} Refeições</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                        <span className="text-gray-400">Repetições:</span>
+                        <span className="text-emerald-700 font-black">{((Number(record.entrada?.repeats) || 0) + (Number(record.principal?.repeats) || 0))} Repetições</span>
+                      </div>
                     </div>
                   </div>
 
@@ -797,7 +908,23 @@ const MenuChecklist: React.FC = () => {
                   <div className="p-6 bg-gray-50 rounded-full text-gray-200">
                     <History size={48} />
                   </div>
-                  <p className="text-gray-400 font-bold uppercase text-xs">Nenhum registro oficial encontrado no banco de dados.</p>
+                  <p className="text-gray-400 font-bold uppercase text-xs">
+                    {hasActiveHistoryFilter
+                      ? 'Nenhum registro encontrado para a data ou cardápio informado.'
+                      : 'Nenhum registro oficial encontrado no banco de dados.'}
+                  </p>
+                  {hasActiveHistoryFilter && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistorySearchTerm('');
+                        setHistoryDateFilter('');
+                      }}
+                      className="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -128,6 +128,8 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
   
   // Modals & States
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingAta, setEditingAta] = useState<SchoolAta | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [viewingAta, setViewingAta] = useState<SchoolAta | null>(null);
   const [printingAta, setPrintingAta] = useState<SchoolAta | null>(null);
   const [customSequenceNumber, setCustomSequenceNumber] = useState<string>('');
@@ -150,6 +152,26 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
   const [linkedGuardianRelation, setLinkedGuardianRelation] = useState<string>('Responsável Legal');
   const [participantSourceTab, setParticipantSourceTab] = useState<'SECRETARIA_ALUNO' | 'SECRETARIA_SERVIDOR' | 'MANUAL'>('SECRETARIA_ALUNO');
 
+  const getDefaultFormData = () => ({
+    category: (moduleSource === 'CIVICO_MILITAR' ? 'DISCIPLINAR' : moduleSource === 'COORDENACAO' ? 'PEDAGOGICO' : 'GERAL') as SchoolAta['category'],
+    pauta_assunto: '',
+    meeting_date: new Date().toISOString().split('T')[0],
+    meeting_time_start: '08:00',
+    meeting_time_end: '09:30',
+    location: 'Escola Estadual Cívico-Militar André Antônio Maggi • Colíder/MT',
+    participants: [
+      { 
+        name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'), 
+        role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
+      }
+    ] as AtaParticipant[],
+    objectives: '',
+    content_deliberations: '',
+    forwarding_actions: '',
+    signatory_name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'),
+    signatory_role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
+  });
+
   // Form fields
   const [formData, setFormData] = useState<{
     category: SchoolAta['category'];
@@ -164,25 +186,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     forwarding_actions: string;
     signatory_name: string;
     signatory_role: string;
-  }>({
-    category: moduleSource === 'CIVICO_MILITAR' ? 'DISCIPLINAR' : moduleSource === 'COORDENACAO' ? 'PEDAGOGICO' : 'GERAL',
-    pauta_assunto: '',
-    meeting_date: new Date().toISOString().split('T')[0],
-    meeting_time_start: '08:00',
-    meeting_time_end: '09:30',
-    location: 'Escola Estadual Cívico-Militar André Antônio Maggi • Colíder/MT',
-    participants: [
-      { 
-        name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'), 
-        role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
-      }
-    ],
-    objectives: '',
-    content_deliberations: '',
-    forwarding_actions: '',
-    signatory_name: user?.name || (moduleSource === 'CIVICO_MILITAR' ? 'Gestão Cívico-Militar' : moduleSource === 'COORDENACAO' ? 'Coordenação Pedagógica' : 'Secretaria Escolar'),
-    signatory_role: resolveOfficialStaffRole(user?.name, user?.jobFunction || user?.role || (moduleSource === 'CIVICO_MILITAR' ? 'GESTOR EDUCACIONAL MILITAR' : moduleSource === 'COORDENACAO' ? 'COORDENAÇÃO PEDAGÓGICA' : 'SECRETÁRIO ESCOLAR'))
-  });
+  }>(getDefaultFormData);
 
   // Participant input state for custom manual additions
   const [newParticipantName, setNewParticipantName] = useState('');
@@ -210,12 +214,12 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     return { number: nextNum, formatted };
   }, [atas, currentYear]);
 
-  // Sync sequence number when modal opens
+  // Sync sequence number when modal opens for a new ata
   useEffect(() => {
-    if (isModalOpen && !customSequenceNumber) {
+    if (isModalOpen && !editingAta && !customSequenceNumber) {
       setCustomSequenceNumber(String(nextSequenceInfo.number));
     }
-  }, [isModalOpen, nextSequenceInfo.number]);
+  }, [isModalOpen, editingAta, nextSequenceInfo.number]);
 
   // Load Atas from Supabase with localStorage backup & dual-table cloud sync
   const loadAtas = async () => {
@@ -649,12 +653,184 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
     }));
   };
 
+  const resetTransientModalInputs = () => {
+    setNewParticipantName('');
+    setNewParticipantRole('Professor(a)');
+    setStudentSearchTerm('');
+    setSelectedStudentId('');
+    setLinkedGuardianInput('');
+    setStaffSearchTerm('');
+    setSelectedStaffToAdd('');
+    setAiPromptInput('');
+  };
+
+  const handleOpenNewAta = () => {
+    setEditingAta(null);
+    setFormData(getDefaultFormData());
+    setCustomSequenceNumber(String(nextSequenceInfo.number));
+    resetTransientModalInputs();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditAta = (ata: SchoolAta) => {
+    const unifiedBodyText = [ata.objectives, ata.content_deliberations, ata.forwarding_actions]
+      .map(s => (s || '').trim())
+      .filter(Boolean)
+      .join('\n\n');
+
+    let seqNum = ata.number || 0;
+    if (!seqNum && ata.formatted_number) {
+      const match = ata.formatted_number.match(/^(\d+)/);
+      if (match) seqNum = parseInt(match[1], 10);
+    }
+
+    setViewingAta(null);
+    setEditingAta(ata);
+    setCustomSequenceNumber(seqNum ? String(seqNum) : String(nextSequenceInfo.number));
+    setFormData({
+      category: ata.category || 'GERAL',
+      pauta_assunto: ata.pauta_assunto || '',
+      meeting_date: (ata.meeting_date || new Date().toISOString().split('T')[0]).split('T')[0],
+      meeting_time_start: ata.meeting_time_start || '08:00',
+      meeting_time_end: ata.meeting_time_end || '09:30',
+      location: ata.location || 'Escola Estadual Cívico-Militar André Antônio Maggi • Colíder/MT',
+      participants: Array.isArray(ata.participants) ? ata.participants.map(p => ({ ...p })) : [],
+      objectives: '',
+      content_deliberations: unifiedBodyText,
+      forwarding_actions: '',
+      signatory_name: ata.signatory_name || '',
+      signatory_role: ata.signatory_role || ''
+    });
+    resetTransientModalInputs();
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingAta(null);
+  };
+
   const handleSaveAta = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     if (!formData.pauta_assunto.trim() || !formData.content_deliberations.trim()) {
       alert('Por favor, preencha a pauta/assunto e as deliberações da ata!');
       return;
     }
+
+    setIsSaving(true);
+    try {
+      if (editingAta) {
+        const ataYear = editingAta.year || currentYear;
+        const seqNum = customSequenceNumber
+          ? parseInt(customSequenceNumber, 10) || editingAta.number || nextSequenceInfo.number
+          : (editingAta.number || nextSequenceInfo.number);
+        const formattedNum = `${String(seqNum).padStart(3, '0')}/${ataYear}/EECAAMCOL/SEDUC/MT`;
+
+        const updatedAta: SchoolAta = {
+          ...editingAta,
+          id: editingAta.id,
+          number: seqNum,
+          year: ataYear,
+          formatted_number: formattedNum,
+          module_source: editingAta.module_source || moduleSource,
+          category: formData.category,
+          pauta_assunto: formData.pauta_assunto.trim(),
+          meeting_date: formData.meeting_date,
+          meeting_time_start: formData.meeting_time_start,
+          meeting_time_end: formData.meeting_time_end,
+          location: formData.location.trim(),
+          participants: formData.participants,
+          objectives: formData.objectives.trim(),
+          content_deliberations: formData.content_deliberations.trim(),
+          forwarding_actions: formData.forwarding_actions.trim(),
+          signatory_name: formData.signatory_name.trim() || 'Gestão Escolar',
+          signatory_role: formData.signatory_role.trim() || 'Responsável',
+          signatories: formData.participants,
+          created_at: editingAta.created_at || new Date().toISOString()
+        };
+
+        const updatedList = atas
+          .map(a => (a.id === editingAta.id ? updatedAta : a))
+          .sort((a, b) => {
+            if (b.year !== a.year) return b.year - a.year;
+            return (b.number || 0) - (a.number || 0);
+          });
+        setAtas(updatedList);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedList));
+
+        if (printingAta?.id === updatedAta.id) {
+          setPrintingAta(updatedAta);
+        }
+
+        try {
+          const { data: updatedRows, error: primaryErr } = await supabase
+            .from('school_atas')
+            .update({
+              number: updatedAta.number,
+              year: updatedAta.year,
+              formatted_number: updatedAta.formatted_number,
+              module_source: updatedAta.module_source,
+              category: updatedAta.category,
+              pauta_assunto: updatedAta.pauta_assunto,
+              meeting_date: updatedAta.meeting_date,
+              meeting_time_start: updatedAta.meeting_time_start,
+              meeting_time_end: updatedAta.meeting_time_end,
+              location: updatedAta.location,
+              participants: updatedAta.participants,
+              objectives: updatedAta.objectives,
+              content_deliberations: updatedAta.content_deliberations,
+              forwarding_actions: updatedAta.forwarding_actions,
+              signatory_name: updatedAta.signatory_name,
+              signatory_role: updatedAta.signatory_role,
+              signatories: updatedAta.signatories
+            })
+            .eq('id', updatedAta.id)
+            .select('id');
+
+          if (primaryErr) {
+            console.warn('Erro ao atualizar ata na tabela principal:', primaryErr);
+          } else if (!updatedRows || updatedRows.length === 0) {
+            await supabase.from('school_atas').upsert([{
+              id: updatedAta.id,
+              number: updatedAta.number,
+              year: updatedAta.year,
+              formatted_number: updatedAta.formatted_number,
+              module_source: updatedAta.module_source,
+              category: updatedAta.category,
+              pauta_assunto: updatedAta.pauta_assunto,
+              meeting_date: updatedAta.meeting_date,
+              meeting_time_start: updatedAta.meeting_time_start,
+              meeting_time_end: updatedAta.meeting_time_end,
+              location: updatedAta.location,
+              participants: updatedAta.participants,
+              objectives: updatedAta.objectives,
+              content_deliberations: updatedAta.content_deliberations,
+              forwarding_actions: updatedAta.forwarding_actions,
+              signatory_name: updatedAta.signatory_name,
+              signatory_role: updatedAta.signatory_role,
+              signatories: updatedAta.signatories,
+              created_at: updatedAta.created_at
+            }], { onConflict: 'id' });
+          }
+
+          await supabase.from('civic_documents').upsert([{
+            id: updatedAta.id,
+            template: 'official_ata',
+            date: updatedAta.created_at,
+            timestamp: Date.now(),
+            student_name: updatedAta.formatted_number,
+            student_class: updatedAta.module_source,
+            content: updatedAta
+          }], { onConflict: 'id' });
+        } catch (err) {
+          console.warn('Persistindo edição da ata em localStorage e nuvem:', err);
+        }
+
+        handleCloseModal();
+        alert(`ATA Nº ${updatedAta.formatted_number} atualizada com sucesso!`);
+        return;
+      }
 
     const seqNum = customSequenceNumber ? parseInt(customSequenceNumber) || nextSequenceInfo.number : nextSequenceInfo.number;
     const formattedNum = `${String(seqNum).padStart(3, '0')}/${currentYear}/EECAAMCOL/SEDUC/MT`;
@@ -725,8 +901,13 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
       console.warn('Persistindo ata em localStorage e nuvem:', e);
     }
 
-    setIsModalOpen(false);
-    alert(`ATA Nº ${newAta.formatted_number} registrada e arquivada com sucesso!`);
+      handleCloseModal();
+      setFormData(getDefaultFormData());
+      setCustomSequenceNumber('');
+      alert(`ATA Nº ${newAta.formatted_number} registrada e arquivada com sucesso!`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteAta = async (ata: SchoolAta) => {
@@ -798,7 +979,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenNewAta}
             className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-600/20 hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 flex-1 md:flex-initial"
           >
             <Plus size={18} /> Lavrar Nova Ata
@@ -936,6 +1117,13 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                             <Eye size={16} />
                           </button>
                           <button
+                            onClick={() => handleOpenEditAta(ata)}
+                            className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                            title="Editar Ata"
+                          >
+                            <Edit3 size={14} /> Editar
+                          </button>
+                          <button
                             onClick={() => handlePrintAta(ata)}
                             className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
                             title="Imprimir Ata Oficial A4"
@@ -967,19 +1155,22 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
             {/* Modal Header */}
             <div className="p-6 md:p-8 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                  <FileSpreadsheet size={24} />
+                <div className={`w-12 h-12 ${editingAta ? 'bg-amber-500' : 'bg-blue-600'} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
+                  {editingAta ? <Edit3 size={24} /> : <FileSpreadsheet size={24} />}
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-blue-300 uppercase tracking-widest">Escrituração Oficial SEDUC-MT</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${editingAta ? 'text-amber-300' : 'text-blue-300'}`}>
+                    {editingAta ? 'Edição de Ata Registrada • SEDUC-MT' : 'Escrituração Oficial SEDUC-MT'}
+                  </span>
                   <h3 className="text-base font-black uppercase tracking-tight font-mono">
-                    ATA Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(nextSequenceInfo.number).padStart(3, '0')}/{currentYear}/EECAAMCOL/SEDUC/MT
+                    ATA Nº {customSequenceNumber ? String(customSequenceNumber).padStart(3, '0') : String(editingAta?.number || nextSequenceInfo.number).padStart(3, '0')}/{editingAta?.year || currentYear}/EECAAMCOL/SEDUC/MT
                   </h3>
                 </div>
               </div>
 
               <button 
-                onClick={() => setIsModalOpen(false)}
+                type="button"
+                onClick={handleCloseModal}
                 className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
               >
                 <X size={20} />
@@ -1004,7 +1195,7 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
                     onChange={e => setCustomSequenceNumber(e.target.value)}
                     className="w-24 p-2 bg-white border border-blue-200 rounded-xl text-center font-mono font-black text-sm text-blue-900 outline-none focus:ring-2 focus:ring-blue-300"
                   />
-                  <span className="text-xs font-mono font-bold text-slate-500">/{currentYear}</span>
+                  <span className="text-xs font-mono font-bold text-slate-500">/{editingAta?.year || currentYear}</span>
                 </div>
               </div>
 
@@ -1478,16 +1669,21 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest rounded-2xl transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-blue-600/20"
+                  disabled={isSaving}
+                  className={`px-8 py-3.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-xl disabled:opacity-50 ${
+                    editingAta
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-amber-600/20'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-600/20'
+                  }`}
                 >
-                  Efetivar e Registrar Ata
+                  {isSaving ? 'Salvando...' : editingAta ? 'Salvar Alterações da Ata' : 'Efetivar e Registrar Ata'}
                 </button>
               </div>
 
@@ -1514,6 +1710,12 @@ const OfficialAtasManager: React.FC<OfficialAtasManagerProps> = ({ moduleSource,
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenEditAta(viewingAta)}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-md"
+                >
+                  <Edit3 size={14} /> Editar Ata
+                </button>
                 <button 
                   onClick={() => {
                     handlePrintAta(viewingAta);
